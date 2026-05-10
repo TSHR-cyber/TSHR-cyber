@@ -9,9 +9,11 @@
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;500;700&display=swap');
         :root { --hacker-green: #00ff41; --dark-bg: #050505; }
         body { background-color: var(--dark-bg); color: #e0e0e0; font-family: 'Fira Code', monospace; overflow-x: hidden; scroll-behavior: smooth; }
-        
-        /* Optimization: will-change tells the browser to use the GPU */
-        #matrix-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; opacity: 0.12; will-change: transform; }
+    
+        .matrix-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; opacity: 0.15; overflow: hidden; pointer-events: none; }
+        .matrix-col { position: absolute; top: -100vh; font-size: 14px; color: var(--hacker-green); writing-mode: vertical-rl; text-orientation: upright; white-space: nowrap; animation: fall linear infinite; will-change: transform; }
+        @keyframes fall { to { transform: translateY(200vh); } }
+
         .glow-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(0, 255, 65, 0.08) 0%, transparent 40%); z-index: -1; pointer-events: none; will-change: background; }
 
         .glitch { position: relative; display: inline-block; }
@@ -19,13 +21,13 @@
         .glitch:hover::before { left: 2px; text-shadow: -2px 0 #ff00c1; clip: rect(44px, 450px, 56px, 0); animation: g-anim 2s infinite linear alternate-reverse; }
         @keyframes g-anim { 0% { clip: rect(31px, 9999px, 94px, 0); } 100% { clip: rect(13px, 9999px, 85px, 0); } }
 
-        .cyber-card { border: 1px solid rgba(0, 255, 65, 0.2); background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(8px); overflow: hidden; }
+        .cyber-card { border: 1px solid rgba(0, 255, 65, 0.2); background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(8px); overflow: hidden; position: relative; }
         .cyber-card::before { content: ""; position: absolute; top: 0; left: -100%; width: 100%; height: 1px; background: linear-gradient(90deg, transparent, var(--hacker-green)); animation: b-run 4s infinite linear; }
         @keyframes b-run { 0% { left: -100%; } 100% { left: 100%; } }
     </style>
 </head>
 <body>
-    <canvas id="matrix-canvas"></canvas>
+    <div class="matrix-container" id="matrix-grid"></div>
     <div class="glow-bg" id="glow"></div>
 
     <nav class="fixed top-0 w-full z-50 p-6 flex justify-between items-center bg-black/40 backdrop-blur-md border-b border-green-900/20">
@@ -70,68 +72,69 @@
     </main>
 
     <script>
-        // --- OBFUSCATED & OPTIMIZED CORE ---
+
         (function(_0x1,_0x2){const _0x3=_0x1();while(!![]){try{const _0x4=-parseInt(_0x5(0x10d))/0x1+parseInt(_0x5(0x105))/0x2+-parseInt(_0x5(0x10a))/0x3+parseInt(_0x5(0x107))/0x4+-parseInt(_0x5(0x103))/0x5+parseInt(_0x5(0x10c))/0x6*(parseInt(_0x5(0x106))/0x7)+parseInt(_0x5(0x10b))/0x8;if(_0x4===_0x2)break;else _0x3['push'](_0x3['shift']());}catch(_0x5e){_0x3['push'](_0x3['shift']());}}}(_0xOB,0x7a30b));
         function _0x5(_0xID){const _0xSTR=_0xOB();return _0x5=function(_0xIDX){_0xIDX=_0xIDX-0x100;return _0xSTR[_0xIDX];},_0x5(_0xID);}
-        function _0xOB(){return['2d','matrix-canvas','0123456789ABCDEF','rgba(0,0,0,0.1)','#0F0','12px monospace','typewriter','animate-pulse','glow','--x','--y','xss-input','terminal-output','hidden','innerHTML','value','replace'];}
-
-        // Optimized Matrix (lower frame rate, fewer drops)
-        const _m=document.getElementById(_0x5(0x101)),_c=_m.getContext(_0x5(0x100));
-        let _w=_m.width=window.innerWidth,_h=_m.height=window.innerHeight;
-        const _l=_0x5(0x102),_fs=15,_dr=Array(Math.floor(_w/_fs)).fill(1);
-        function draw(){
-            _c.fillStyle=_0x5(0x103);_c.fillRect(0,0,_w,_h);
-            _c.fillStyle=_0x5(0x104);_c.font=_0x5(0x105);
-            for(let i=0;i<_dr.length;i++){
-                const t=_l.charAt(Math.floor(Math.random()*_l.length));
-                _c.fillText(t,i*_fs,_dr[i]*_fs);
-                if(_dr[i]*_fs>_h&&Math.random()>0.98)_dr[i]=0;_dr[i]++;
-            }
+        function _0xOB(){return['matrix-grid','0123456789ABCDEF!@#$%^&*','typewriter','glow','--x','--y','xss-input','terminal-output','hidden','innerHTML','value','replace','classList','remove'];}
+        const grid = document.getElementById(_0x5(0x100));
+        const chars = _0x5(0x101);
+        const colCount = Math.floor(window.innerWidth / 30);
+        for (let i = 0; i < colCount; i++) {
+            const col = document.createElement('div');
+            col.className = 'matrix-col';
+            let content = "";
+            for(let j=0; j<40; j++) content += chars[Math.floor(Math.random()*chars.length)] + "\n";
+            col.innerText = content;
+            col.style.left = (i * 30) + "px";
+            col.style.animationDuration = (8 + Math.random() * 12) + "s";
+            col.style.animationDelay = (Math.random() * -20) + "s";
+            grid.appendChild(col);
         }
-        setInterval(draw,60); // Slowed down to 16fps for performance
 
-        // Throttled Mouse Glow
-        let lastMove=0;
-        window.addEventListener('mousemove',e=>{
-            if(Date.now()-lastMove<20)return; // Limit updates
-            lastMove=Date.now();
-            const g=document.getElementById(_0x5(0x108));
-            g.style.setProperty(_0x5(0x109),e.clientX+'px');
-            g.style.setProperty(_0x5(0x10a),e.clientY+'px');
-        });
-
-        // Typewriter
-        const ph=[atob('U2VjdXJpdHkgUmVzZWFyY2hlci4='),atob('VGVjaG5pY2FsIFdyaXRlci4='),atob('U3lzdGVtIEFyY2hpdGVjdC4=')];
-        let _a=0,_b=0,_cur='',_del=false;
-        (function type(){
-            const d=document.getElementById(_0x5(0x106));
-            if(_a<ph.length){
-                if(!_del&&_b<=ph[_a].length)_cur=ph[_a].substring(0,_b++);
-                else if(_del&&_b>=0)_cur=ph[_a].substring(0,_b--);
-                d.innerHTML=_cur+'|';
-                if(_b==ph[_a].length)_del=true;
-                if(_del&&_b==0){_del=false;_a=(_a+1)%ph.length;}
+        let ticking = false;
+        window.addEventListener('mousemove', e => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    const g = document.getElementById(_0x5(0x103));
+                    g.style.setProperty(_0x5(0x104), e.clientX + 'px');
+                    g.style.setProperty(_0x5(0x105), e.clientY + 'px');
+                    ticking = false;
+                });
+                ticking = true;
             }
-            setTimeout(type,_del?40:110);
+        });
+        const ph = [atob('U2VjdXJpdHkgUmVzZWFyY2hlci4='), atob('VGVjaG5pY2FsIFdyaXRlci4='), atob('U3lzdGVtIEFyY2hpdGVjdC4=')];
+        let _a = 0, _b = 0, _del = false;
+        (function type(){
+            const d = document.getElementById(_0x5(0x102));
+            if(_a < ph.length){
+                let cur = ph[_a].substring(0, _b);
+                d.innerText = cur + '|';
+                if(!_del && _b <= ph[_a].length) _b++;
+                else if(_del && _b >= 0) _b--;
+                if(_b > ph[_a].length) _del = true;
+                if(_del && _b < 0){ _del = false; _a = (_a + 1) % ph.length; }
+            }
+            setTimeout(type, _del ? 40 : 120);
         }());
-
         function executeExploit(){
-            const i=document.getElementById(_0x5(0x10b)).value,o=document.getElementById(_0x5(0x10c));
-            const s=i.replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            o.classList.remove(_0x5(0x10d));
-            o.innerHTML='<p class="text-blue-500">[system] Scanning buffer...</p>';
-            setTimeout(()=>{
-                o.innerHTML+='<p class="text-yellow-500 mt-1">[!] Malicious pattern: "'+s+'"</p>';
+            const i = document.getElementById(_0x5(0x106)).value;
+            const o = document.getElementById(_0x5(0x107));
+            const s = i.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            o.classList.remove(_0x5(0x108));
+            o.innerHTML = '<p class="text-blue-500">[system] Buffer sweep initiated...</p>';
+            setTimeout(() => {
+                o.innerHTML += '<p class="text-yellow-500 mt-1">[!] Intercept: "' + s + '"</p>';
                 if(/<script|on\w+=/i.test(i)){
-                    const logs=[atob('U2NyYW1ibGluZyBzZXNzaW9uLi4u'),'Tunneling C2: 10.0.8.2','Exploit Success.'];
-                    logs.forEach((m,idx)=>{
-                        setTimeout(()=>{
-                            o.innerHTML+='<p class="text-green-500 mt-1">> '+m+'</p>';
-                            o.scrollTop=o.scrollHeight;
-                        },idx*300);
+                    const logs = [atob('VHJhY2luZyBDOiAxMC4wLjguMg=='), 'Bypassing SOP...', 'Exploit confirmed.'];
+                    logs.forEach((m, idx) => {
+                        setTimeout(() => {
+                            o.innerHTML += '<p class="text-green-500 mt-1">> ' + m + '</p>';
+                            o.scrollTop = o.scrollHeight;
+                        }, idx * 250);
                     });
                 }
-            },600);
+            }, 500);
         }
     </script>
 </body>
