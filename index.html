@@ -3,316 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TSHR | Secure Terminal</title>
+    <title>TSHR</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;500;700&display=swap');
+        :root { --hacker-green: #00ff41; --dark-bg: #050505; }
+        body { background-color: var(--dark-bg); color: #e0e0e0; font-family: 'Fira Code', monospace; overflow-x: hidden; scroll-behavior: smooth; }
+        
+        /* Optimization: will-change tells the browser to use the GPU */
+        #matrix-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; opacity: 0.12; will-change: transform; }
+        .glow-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(0, 255, 65, 0.08) 0%, transparent 40%); z-index: -1; pointer-events: none; will-change: background; }
 
-        :root {
-            --hacker-green: #00ff41;
-            --terminal-red: #ff3e3e;
-            --dark-bg: #0a0a0a;
-        }
+        .glitch { position: relative; display: inline-block; }
+        .glitch::before, .glitch::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--dark-bg); }
+        .glitch:hover::before { left: 2px; text-shadow: -2px 0 #ff00c1; clip: rect(44px, 450px, 56px, 0); animation: g-anim 2s infinite linear alternate-reverse; }
+        @keyframes g-anim { 0% { clip: rect(31px, 9999px, 94px, 0); } 100% { clip: rect(13px, 9999px, 85px, 0); } }
 
-        body {
-            background-color: var(--dark-bg);
-            color: #e0e0e0;
-            font-family: 'Fira Code', monospace;
-            overflow-x: hidden;
-            scroll-behavior: smooth;
-        }
-
-        /* Animated Matrix Rain Background */
-        #matrix-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -2;
-            opacity: 0.15;
-        }
-
-        /* Interactive Glow Follower */
-        .glow-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(0, 255, 65, 0.1) 0%, transparent 40%);
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        /* Glitch Effect */
-        .glitch {
-            position: relative;
-            display: inline-block;
-        }
-
-        .glitch::before, .glitch::after {
-            content: attr(data-text);
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--dark-bg);
-        }
-
-        .glitch:hover::before {
-            left: 2px;
-            text-shadow: -2px 0 #ff00c1;
-            clip: rect(44px, 450px, 56px, 0);
-            animation: glitch-anim 5s infinite linear alternate-reverse;
-        }
-
-        @keyframes glitch-anim {
-            0% { clip: rect(31px, 9999px, 94px, 0); }
-            20% { clip: rect(62px, 9999px, 42px, 0); }
-            /* ... more frames ... */
-            100% { clip: rect(13px, 9999px, 85px, 0); }
-        }
-
-        /* Cyberpunk Card Borders */
-        .cyber-card {
-            border: 1px solid rgba(0, 255, 65, 0.3);
-            background: rgba(15, 15, 15, 0.8);
-            backdrop-filter: blur(10px);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .cyber-card::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--hacker-green));
-            animation: border-run 3s infinite linear;
-        }
-
-        @keyframes border-run {
-            0% { left: -100%; }
-            100% { left: 100%; }
-        }
-
-        .terminal-scroll::-webkit-scrollbar {
-            width: 5px;
-        }
-        .terminal-scroll::-webkit-scrollbar-thumb {
-            background: var(--hacker-green);
-            border-radius: 10px;
-        }
+        .cyber-card { border: 1px solid rgba(0, 255, 65, 0.2); background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(8px); overflow: hidden; }
+        .cyber-card::before { content: ""; position: absolute; top: 0; left: -100%; width: 100%; height: 1px; background: linear-gradient(90deg, transparent, var(--hacker-green)); animation: b-run 4s infinite linear; }
+        @keyframes b-run { 0% { left: -100%; } 100% { left: 100%; } }
     </style>
 </head>
 <body>
-
     <canvas id="matrix-canvas"></canvas>
     <div class="glow-bg" id="glow"></div>
 
-    <nav class="fixed top-0 w-full z-50 p-6 flex justify-between items-center bg-black/50 backdrop-blur-sm border-b border-green-900/30">
+    <nav class="fixed top-0 w-full z-50 p-6 flex justify-between items-center bg-black/40 backdrop-blur-md border-b border-green-900/20">
         <div class="text-green-500 font-bold text-xl tracking-tighter">0xTSHR</div>
-        <div class="hidden md:flex space-x-8 text-xs uppercase tracking-widest text-gray-400">
-            <a href="#about" class="hover:text-green-500 transition-colors">./About</a>
-            <a href="#skills" class="hover:text-green-500 transition-colors">./Skills</a>
-            <a href="#sandbox" class="hover:text-green-500 transition-colors">./Sandbox</a>
+        <div class="hidden md:flex space-x-8 text-[10px] uppercase tracking-widest text-gray-500">
+            <a href="#about" class="hover:text-green-400 transition-colors">/About</a>
+            <a href="#skills" class="hover:text-green-400 transition-colors">/Skills</a>
+            <a href="#sandbox" class="hover:text-green-400 transition-colors">/Sandbox</a>
         </div>
     </nav>
 
     <section class="min-h-screen flex flex-col justify-center items-center text-center p-6">
-        <div class="mb-2 text-green-500/50 text-sm animate-pulse">[ IDENTITY_VERIFIED ]</div>
-        <h1 class="text-5xl md:text-9xl font-black glitch mb-6 tracking-tighter" data-text="0xTSHR">0xTSHR</h1>
-        <p id="typewriter" class="text-green-400 text-lg md:text-2xl font-light h-8"></p>
-        
-        <div class="mt-12 flex space-x-4">
-            <a href="#sandbox" class="px-8 py-3 border border-green-500 text-green-500 hover:bg-green-500 hover:text-black transition-all font-bold text-sm uppercase">Enter Sandbox</a>
+        <h1 class="text-6xl md:text-9xl font-black glitch mb-4 tracking-tighter" data-text="0xTSHR">0xTSHR</h1>
+        <p id="typewriter" class="text-green-500 text-sm md:text-lg font-light h-6 opacity-80"></p>
+        <div class="mt-12">
+            <a href="#sandbox" class="px-10 py-3 border border-green-500/50 text-green-500 hover:bg-green-500 hover:text-black transition-all font-bold text-xs uppercase tracking-widest">Access Sandbox</a>
         </div>
     </section>
 
     <main class="max-w-5xl mx-auto space-y-32 pb-32 px-6">
-        
-        <section id="about" class="grid md:grid-cols-2 gap-12 items-center">
-            <div class="cyber-card p-8 rounded-tr-3xl">
-                <h2 class="text-2xl text-green-500 mb-6 font-bold flex items-center">
-                    <span class="mr-2">⚡</span> System.info()
-                </h2>
-                <p class="text-gray-400 leading-relaxed italic">
-                    "I don't just find bugs; I find the logic flaws that keep developers up at night."
-                </p>
-                <p class="mt-4 text-gray-300">
-                    Specializing in offensive security and full-stack architecture. I bridge the gap between high-level documentation and low-level code exploitation.
-                </p>
-            </div>
-            <div class="space-y-4">
-                <div class="flex justify-between text-xs mb-1"><span>COGNITIVE_LOAD</span><span>98%</span></div>
-                <div class="w-full bg-zinc-900 h-1"><div class="bg-green-500 h-full w-[98%] shadow-[0_0_10px_#00ff41]"></div></div>
-                <div class="flex justify-between text-xs mb-1"><span>STEALTH_RATING</span><span>42%</span></div>
-                <div class="w-full bg-zinc-900 h-1"><div class="bg-green-500 h-full w-[42%] shadow-[0_0_10px_#00ff41]"></div></div>
-            </div>
+        <section id="about" class="cyber-card p-8 rounded-lg">
+            <h2 class="text-xl text-green-500 mb-4 font-bold tracking-widest">> SYSTEM_SUMMARY</h2>
+            <p class="text-gray-400 leading-relaxed text-sm md:text-base">
+                Specializing in vulnerability research and technical documentation. My focus lies in the intersection of security protocols and scalable architecture.
+            </p>
         </section>
 
-        <section id="skills">
-            <h2 class="text-3xl font-bold mb-12 text-center text-green-500 underline decoration-double">Available_Modules</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="cyber-card p-6 text-center hover:scale-105 transition-transform group">
-                    <div class="text-3xl mb-4 group-hover:animate-bounce">🌐</div>
-                    <h3 class="font-bold text-green-400">Web Pentesting</h3>
-                    <p class="text-[10px] text-zinc-500 mt-2">XSS / SQLi / IDOR</p>
+        <section id="sandbox" class="cyber-card rounded-lg">
+            <div class="bg-zinc-900/50 p-3 border-b border-zinc-800 flex items-center space-x-2">
+                <div class="w-2 h-2 rounded-full bg-red-900"></div>
+                <span class="text-[9px] text-zinc-500 font-bold uppercase">XSS_INTERCEPTOR_v4.0</span>
+            </div>
+            <div class="p-6">
+                <div class="flex flex-col md:flex-row gap-2 mb-6">
+                    <input type="text" id="xss-input" placeholder="<script>alert(1)</script>" 
+                           class="flex-1 bg-black border border-zinc-800 p-3 text-green-400 font-mono text-sm focus:outline-none focus:border-green-600 transition-all">
+                    <button onclick="executeExploit()" class="bg-green-700 hover:bg-green-500 text-black px-8 py-3 font-bold text-xs uppercase transition-all">Execute</button>
                 </div>
-                <div class="cyber-card p-6 text-center hover:scale-105 transition-transform group">
-                    <div class="text-3xl mb-4 group-hover:animate-bounce">📡</div>
-                    <h3 class="font-bold text-green-400">Networking</h3>
-                    <p class="text-[10px] text-zinc-500 mt-2">TCP/UDP Auditing</p>
-                </div>
-                <div class="cyber-card p-6 text-center hover:scale-105 transition-transform group">
-                    <div class="text-3xl mb-4 group-hover:animate-bounce">🐳</div>
-                    <h3 class="font-bold text-green-400">Container Security</h3>
-                    <p class="text-[10px] text-zinc-500 mt-2">Docker / Kubernetes</p>
-                </div>
-                <div class="cyber-card p-6 text-center hover:scale-105 transition-transform group">
-                    <div class="text-3xl mb-4 group-hover:animate-bounce">📜</div>
-                    <h3 class="font-bold text-green-400">Technical Writing</h3>
-                    <p class="text-[10px] text-zinc-500 mt-2">Docusaurus / Arch</p>
-                </div>
+                <div id="terminal-output" class="hidden p-4 font-mono text-[10px] overflow-y-auto max-h-64 bg-black/50 border border-zinc-900"></div>
             </div>
         </section>
-
-        <section id="sandbox" class="relative">
-            <div class="cyber-card p-1 md:p-8 rounded-lg overflow-hidden border-2 border-green-500/50">
-                <div class="bg-zinc-900 p-4 border-b border-zinc-800 flex items-center justify-between">
-                    <div class="flex space-x-2">
-                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                    </div>
-                    <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Live Vulnerability Sandbox</span>
-                </div>
-                
-                <div class="p-6">
-                    <p class="mb-6 text-sm text-zinc-400">Try to inject a script. Our WAF (Web Application Firewall) will simulate an intercept.</p>
-                    
-                    <div class="flex flex-col md:flex-row gap-4 mb-8">
-                        <input type="text" id="xss-input" placeholder="<script>alert('pwned')</script>" 
-                               class="flex-1 bg-black border border-zinc-700 p-4 text-green-400 font-mono focus:outline-none focus:border-green-500 transition-all placeholder:opacity-30">
-                        <button onclick="executeExploit()" class="bg-green-600 hover:bg-green-400 text-black px-10 py-4 font-black uppercase skew-x-[-10deg] transition-all">
-                            Run_Exploit
-                        </button>
-                    </div>
-
-                    <div id="terminal-output" class="hidden terminal-scroll p-6 font-mono text-xs overflow-y-auto max-h-80 bg-black/90 border border-green-900/50 shadow-inner">
-                        </div>
-                </div>
-            </div>
-        </section>
-
     </main>
 
-    <footer class="text-center py-20 border-t border-zinc-900 bg-black">
-        <div class="text-green-500 mb-4 font-bold tracking-tighter">0xTSHR // 2026</div>
-        <div class="text-[10px] text-zinc-600 uppercase tracking-[0.5em]">Global Security Network Established</div>
-    </footer>
+    <script>
+        // --- OBFUSCATED & OPTIMIZED CORE ---
+        (function(_0x1,_0x2){const _0x3=_0x1();while(!![]){try{const _0x4=-parseInt(_0x5(0x10d))/0x1+parseInt(_0x5(0x105))/0x2+-parseInt(_0x5(0x10a))/0x3+parseInt(_0x5(0x107))/0x4+-parseInt(_0x5(0x103))/0x5+parseInt(_0x5(0x10c))/0x6*(parseInt(_0x5(0x106))/0x7)+parseInt(_0x5(0x10b))/0x8;if(_0x4===_0x2)break;else _0x3['push'](_0x3['shift']());}catch(_0x5e){_0x3['push'](_0x3['shift']());}}}(_0xOB,0x7a30b));
+        function _0x5(_0xID){const _0xSTR=_0xOB();return _0x5=function(_0xIDX){_0xIDX=_0xIDX-0x100;return _0xSTR[_0xIDX];},_0x5(_0xID);}
+        function _0xOB(){return['2d','matrix-canvas','0123456789ABCDEF','rgba(0,0,0,0.1)','#0F0','12px monospace','typewriter','animate-pulse','glow','--x','--y','xss-input','terminal-output','hidden','innerHTML','value','replace'];}
 
- <script>
-    /**
-     * [SECURE_KERNEL_V2]
-     * STATUS: ENCRYPTED
-     * INTEGRITY_CHECK: PASSED
-     */
-    (function(_0xTSHR, _0xSEC) {
-        const _0xCORE = _0xTSHR();
-        while (!![]) {
-            try {
-                const _0xWAF = -parseInt(_0xHASH(0x10d)) / 0x1 + parseInt(_0xHASH(0x105)) / 0x2 + -parseInt(_0xHASH(0x10a)) / 0x3 + parseInt(_0xHASH(0x107)) / 0x4 + -parseInt(_0xHASH(0x103)) / 0x5 + parseInt(_0xHASH(0x10c)) / 0x6 * (parseInt(_0xHASH(0x106)) / 0x7) + parseInt(_0xHASH(0x10b)) / 0x8;
-                if (_0xWAF === _0xSEC) break;
-                else _0xCORE['push'](_0xCORE['shift']());
-            } catch (_0xERR) {
-                _0xCORE['push'](_0xCORE['shift']());
+        // Optimized Matrix (lower frame rate, fewer drops)
+        const _m=document.getElementById(_0x5(0x101)),_c=_m.getContext(_0x5(0x100));
+        let _w=_m.width=window.innerWidth,_h=_m.height=window.innerHeight;
+        const _l=_0x5(0x102),_fs=15,_dr=Array(Math.floor(_w/_fs)).fill(1);
+        function draw(){
+            _c.fillStyle=_0x5(0x103);_c.fillRect(0,0,_w,_h);
+            _c.fillStyle=_0x5(0x104);_c.font=_0x5(0x105);
+            for(let i=0;i<_dr.length;i++){
+                const t=_l.charAt(Math.floor(Math.random()*_l.length));
+                _c.fillText(t,i*_fs,_dr[i]*_fs);
+                if(_dr[i]*_fs>_h&&Math.random()>0.98)_dr[i]=0;_dr[i]++;
             }
         }
-    }(_0xOBF_DATA, 0x7a30b));
+        setInterval(draw,60); // Slowed down to 16fps for performance
 
-    function _0xHASH(_0xID) {
-        const _0xDATA = _0xOBF_DATA();
-        return _0xHASH = function(_0xIDX, _0xMAP) {
-            _0xIDX = _0xIDX - 0x100;
-            let _0xVAL = _0xDATA[_0xIDX];
-            return _0xVAL;
-        }, _0xHASH(_0xID);
-    }
-
-    function _0xOBF_DATA() {
-        const _0xSTR = ['2d', 'matrix-canvas', '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%^&*', 'rgba(0, 0, 0, 0.05)', '#0F0', '14px monospace', 'typewriter', 'animate-pulse', 'glow', '--x', '--y', 'xss-input', 'terminal-output', 'hidden', 'innerHTML', 'value', 'replace', 'classList', 'remove', 'setTimeout'];
-        return _0xSTR;
-    }
-    (function() { (function a() { try { (function b(i) { if (('' + (i / i)).length !== 1 || i % 20 === 0) { (function() {}).constructor('debugger')(); } else { debugger; } b(++i); }(0)); } catch (e) { setTimeout(a, 5000); } })(); })();
-
-    const _0xMTX = document['getElementById'](_0xHASH(0x101));
-    const _0xCTX = _0xMTX['getContext'](_0xHASH(0x100));
-    let _0xW = _0xMTX['width'] = window['innerWidth'], _0xH = _0xMTX['height'] = window['innerHeight'];
-    const _0xLTR = _0xHASH(0x102), _0xFS = 0xe, _0xCL = _0xW / _0xFS, _0xDR = Array(Math['floor'](_0xCL))['fill'](0x1);
-
-    setInterval(() => {
-        _0xCTX['fillStyle'] = _0xHASH(0x103);
-        _0xCTX['fillRect'](0x0, 0x0, _0xW, _0xH);
-        _0xCTX['fillStyle'] = _0xHASH(0x104);
-        _0xCTX['font'] = _0xHASH(0x105);
-        _0xDR['forEach']((_0xY, _0xI) => {
-            const _0xT = _0xLTR['charAt'](Math['floor'](Math['random']() * _0xLTR['length']));
-            _0xCTX['fillText'](_0xT, _0xI * _0xFS, _0xY * _0xFS);
-            if (_0xY * _0xFS > _0xH && Math['random']() > 0.975) _0xDR[_0xI] = 0x0;
-            _0xDR[_0xI]++;
+        // Throttled Mouse Glow
+        let lastMove=0;
+        window.addEventListener('mousemove',e=>{
+            if(Date.now()-lastMove<20)return; // Limit updates
+            lastMove=Date.now();
+            const g=document.getElementById(_0x5(0x108));
+            g.style.setProperty(_0x5(0x109),e.clientX+'px');
+            g.style.setProperty(_0x5(0x10a),e.clientY+'px');
         });
-    }, 0x32);
 
-    const _0xPHR = [atob('U2VjdXJpdHkgUmVzZWFyY2hlci4='), atob('VGVjaG5pY2FsIFdyaXRlci4='), atob('QnVnIEJvdW50eSBIdW50ZXIu'), atob('U3lzdGVtIEFyY2hpdGVjdC4=')];
-    let _0xA = 0x0, _0xB = 0x0, _0xCUR = '', _0xDEL = ![];
-
-    (function _0xTYPE() {
-        const _0xDIS = document['getElementById'](_0xHASH(0x106));
-        if (_0xA < _0xPHR['length']) {
-            if (!_0xDEL && _0xB <= _0xPHR[_0xA]['length']) _0xCUR = _0xPHR[_0xA]['substring'](0x0, _0xB++);
-            else if (_0xDEL && _0xB >= 0x0) _0xCUR = _0xPHR[_0xA]['substring'](0x0, _0xB--);
-            _0xDIS[_0xHASH(0x10e)] = _0xCUR + '<span class="' + _0xHASH(0x107) + '">|</span>';
-            if (_0xB == _0xPHR[_0xA]['length']) _0xDEL = !![];
-            if (_0xDEL && _0xB == 0x0) { _0xDEL = ![]; _0xA = (_0xA + 0x1) % _0xPHR['length']; }
-        }
-        setTimeout(_0xTYPE, _0xDEL ? 0x32 : 0x96);
-    }());
-
-    window['addEventListener']('mousemove', (_0xE) => {
-        const _0xG = document['getElementById'](_0xHASH(0x108));
-        _0xG['style']['setProperty'](_0xHASH(0x109), _0xE['clientX'] + 'px');
-        _0xG['style']['setProperty'](_0xHASH(0x10a), _0xE['clientY'] + 'px');
-    });
-
-    function executeExploit() {
-        const _0xIN = document['getElementById'](_0xHASH(0x10b))[_0xHASH(0x10f)];
-        const _0xOUT = document['getElementById'](_0xHASH(0x10c));
-        const _0xSAN = _0xIN[_0xHASH(0x110)](/</g, '&lt;')[_0xHASH(0x110)](/>/g, '&gt;');
-        _0xOUT[_0xHASH(0x111)][_0xHASH(0x112)](_0xHASH(0x113));
-        _0xOUT[_0xHASH(0x10e)] = '<p class="text-blue-400 animate-pulse">[system] Hooking into DOM lifecycle...</p>';
-        setTimeout(() => {
-            _0xOUT[_0xHASH(0x10e)] += '<p class="text-yellow-400 mt-2">[!] Security Violation: \"' + _0xSAN + '\"</p>';
-            if (/<script|on\w+=/i['test'](_0xIN)) {
-                setTimeout(() => {
-                    _0xOUT[_0xHASH(0x10e)] += '<p class="text-red-500 font-black mt-4">>> PROTOCOL BREAK: RED_VALKYRIE_INITIATED</p>';
-                    const _0xLOGS = [atob('U2NyYW1ibGluZyBsb2NhbCBzZXNzaW9uIGtleXMuLi4='), atob('U2ltdWxhdGluZyBkYXRhYmFzZSBleGZpbHRyYXRpb24uLi4='), 'Bypassing Same-Origin-Policy (SOP)...', 'Establishing tunnel to C2 server: 10.0.8.254', 'Injecting virtual keylogger...', 'EXPLOIT_SUCCESS: ACCESS_LEVEL_0'];
-                    _0xLOGS['forEach']((_0xM, _0xIDX) => {
-                        setTimeout(() => {
-                            _0xOUT[_0xHASH(0x10e)] += '<p class="text-green-500 opacity-80 mt-1">> ' + _0xM + '</p>';
-                            _0xOUT['scrollTop'] = _0xOUT['scrollHeight'];
-                        }, _0xIDX * 0x190);
-                    });
-                }, 0x3e8);
-            } else {
-                _0xOUT[_0xHASH(0x10e)] += '<p class="text-green-500 mt-2">[ok] Input benign.</p>';
+        // Typewriter
+        const ph=[atob('U2VjdXJpdHkgUmVzZWFyY2hlci4='),atob('VGVjaG5pY2FsIFdyaXRlci4='),atob('U3lzdGVtIEFyY2hpdGVjdC4=')];
+        let _a=0,_b=0,_cur='',_del=false;
+        (function type(){
+            const d=document.getElementById(_0x5(0x106));
+            if(_a<ph.length){
+                if(!_del&&_b<=ph[_a].length)_cur=ph[_a].substring(0,_b++);
+                else if(_del&&_b>=0)_cur=ph[_a].substring(0,_b--);
+                d.innerHTML=_cur+'|';
+                if(_b==ph[_a].length)_del=true;
+                if(_del&&_b==0){_del=false;_a=(_a+1)%ph.length;}
             }
-        }, 0x320);
-    }
-</script>
+            setTimeout(type,_del?40:110);
+        }());
+
+        function executeExploit(){
+            const i=document.getElementById(_0x5(0x10b)).value,o=document.getElementById(_0x5(0x10c));
+            const s=i.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            o.classList.remove(_0x5(0x10d));
+            o.innerHTML='<p class="text-blue-500">[system] Scanning buffer...</p>';
+            setTimeout(()=>{
+                o.innerHTML+='<p class="text-yellow-500 mt-1">[!] Malicious pattern: "'+s+'"</p>';
+                if(/<script|on\w+=/i.test(i)){
+                    const logs=[atob('U2NyYW1ibGluZyBzZXNzaW9uLi4u'),'Tunneling C2: 10.0.8.2','Exploit Success.'];
+                    logs.forEach((m,idx)=>{
+                        setTimeout(()=>{
+                            o.innerHTML+='<p class="text-green-500 mt-1">> '+m+'</p>';
+                            o.scrollTop=o.scrollHeight;
+                        },idx*300);
+                    });
+                }
+            },600);
+        }
+    </script>
 </body>
 </html>
